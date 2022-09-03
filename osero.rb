@@ -1,29 +1,15 @@
 require 'dxruby'
 
 #いろいろ初期化
-back_img = Image.new(800, 800, C_BLUE)
-back = Sprite.new(0, 0, back_img)
-fie_img = Image.new(400, 400, C_GREEN)
-field = Sprite.new(10, 10, fie_img)
-dat_img = Image.new(150, 100, C_YELLOW)
-data = Sprite.new(450, 110, dat_img)
+require_relative 'viewer'
+
 button_img = Image.new(150, 50, C_RED)
+start_button = Sprite.new(250, 200, button_img)
 n_g_button = Sprite.new(450, 280, button_img)
 end_button = Sprite.new(450, 350, button_img)
-start_button = Sprite.new(250, 200, button_img)
-opening = 0
-game_end = 0
 font = Font.new(32)
 font2 = Font.new(40)
 font3 = Font.new(90)
-$n_o_stone = [2,2]
-black_line = []
-9.times do |i|
-  black_line << Sprite.new(i * 50  + 10 , 10, Image.new(3, 400, C_BLACK))
-end
-9.times do |i|
-  black_line << Sprite.new(10 , i * 50 + 10, Image.new(400, 3, C_BLACK))
-end
 
 $map = []
 8.times do
@@ -34,16 +20,20 @@ $map = []
   $map.push(kari_array)
 end
 
+game_end = 0
+
 stone = []
 $map[5 - 1][4 - 1] = 1
 $map[4 - 1][5 - 1] = 1
 $map[4 - 1][4 - 1] = 2
 $map[5 - 1][5 - 1] = 2
+$n_o_stone = [2,2]
 
-color_stone = [C_BLACK, C_WHITE]
 $turn = 0
 $path_turn = 0
 $path_flag = 0
+
+viewer = Viewer.new
 
 def path?
   flag = 0
@@ -127,17 +117,12 @@ def reverse_stone(x, y)
 end
 
 Window.loop do
-
-  #ターンの石
-  stone_img = Image.new(46, 46).circle_fill(23, 23, 23, color_stone[$turn % 2])
-  turn_stone = Sprite.new(310, 415, stone_img)
-
   #石の設置
   if path? || game_end == 1
     if Input.mouse_push?(M_LBUTTON)
       a_img = Image.new(1, 1, C_WHITE)
       m = Sprite.new(Input.mouse_pos_x, Input.mouse_pos_y, a_img)
-      if opening == 1
+      if $opening == 1
         x = (Input.mouse_pos_x - 10) / 50
         y = (Input.mouse_pos_y - 10) / 50
         if (x >= 0 && x < 8 && y >= 0 && y < 8 && $map[x][y] == 0)
@@ -165,7 +150,7 @@ Window.loop do
           $map[4 - 1][5 - 1] = 1
           $map[5 - 1][5 - 1] = 2
           $map[4 - 1][4 - 1] = 2
-          opening = 0
+          $opening = 0
         elsif m === n_g_button
           $n_o_stone = [2, 2]
           game_end = 0
@@ -187,7 +172,7 @@ Window.loop do
         end
       else
         if m === start_button
-          opening = 1
+          $opening = 1
         end
       end
     end
@@ -198,37 +183,7 @@ Window.loop do
     $path_flag += 1
   end
   
-  #石をスプライト化
-  stone = []
-  8.times do |i|
-    8.times do |j|
-      if $map[i][j] != 0
-        stone << Sprite.new((i) * 50  + 13.5, (j) * 50 + 13.5, Image.new(46, 46).circle_fill(23, 23, 23, color_stone[$map[i][j] - 1]))
-      end
-    end
-  end
-
-  #描画
-  back.draw
-  if opening == 1
-    field.draw
-    turn_stone.draw
-    data.draw
-    end_button.draw
-    n_g_button.draw
-    Sprite.draw(black_line)
-    Sprite.draw(stone)
-    Window.draw_font(10, 410, "TURN #{$turn - $path_turn}/60", font)
-    Window.draw_font(450, 110, "黒  #{$n_o_stone[0]}石", font)
-    Window.draw_font(450, 150, "白  #{$n_o_stone[1]}石", font)
-    Window.draw_font(360, 420, "番", font)
-    Window.draw_font(450, 285, "New Game", font)
-    Window.draw_font(500, 355, "End", font)
-  else
-    start_button.draw
-    Window.draw_font(270, 205, "Start", font2)
-    Window.draw_font(120, 100, "OTHELLO", font3)
-  end
+  viewer.draw
 
   #勝敗判定
   if $turn - $path_turn == 60 || $path_flag == 2
